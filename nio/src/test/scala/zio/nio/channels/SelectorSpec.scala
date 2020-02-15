@@ -10,6 +10,7 @@ import zio.nio.BaseSpec
 import zio.test._
 import zio.test.Assertion._
 import SelectorSpecUtils._
+import zio.blocking.Blocking
 
 object SelectorSpec
     extends BaseSpec(
@@ -37,12 +38,12 @@ object SelectorSpecUtils {
   def safeStatusCheck(statusCheck: IO[CancelledKeyException, Boolean]): IO[Nothing, Boolean] =
     statusCheck.either.map(_.getOrElse(false))
 
-  def server(started: Promise[Nothing, Unit]): ZIO[Clock, Exception, Unit] = {
+  def server(started: Promise[Nothing, Unit]): ZIO[Clock with Blocking, Exception, Unit] = {
     def serverLoop(
       selector: Selector,
       channel: ServerSocketChannel,
       buffer: Buffer[Byte]
-    ): IO[Exception, Unit] =
+    ): ZIO[Blocking, Exception, Unit] =
       for {
         _            <- selector.select
         selectedKeys <- selector.selectedKeys
@@ -56,9 +57,9 @@ object SelectorSpecUtils {
                 } yield ()
               } *>
                 IO.whenM(safeStatusCheck(key.isReadable)) {
+                  val sClient = key.channel
+                  val client  = new SocketChannel(sClient.asInstanceOf[JSocketChannel])
                   for {
-                    sClient <- key.channel
-                    client  = new SocketChannel(sClient.asInstanceOf[JSocketChannel])
                     _       <- client.read(buffer)
                     array   <- buffer.array
                     text    = byteArrayToString(array)

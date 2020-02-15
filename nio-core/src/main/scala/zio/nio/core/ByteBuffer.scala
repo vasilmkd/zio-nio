@@ -30,13 +30,13 @@ class ByteBuffer protected[nio] (protected[nio] val byteBuffer: JByteBuffer) ext
   final override def get(i: Int): IO[IndexOutOfBoundsException, Byte] =
     IO.effect(byteBuffer.get(i)).refineToOrDie[IndexOutOfBoundsException]
 
-  final override def getChunk(maxLength: Int = Int.MaxValue): IO[BufferUnderflowException, Chunk[Byte]] =
+  final override def getChunk(maxLength: Int = Int.MaxValue): IO[Nothing, Chunk[Byte]] =
     IO.effect {
         val array = Array.ofDim[Byte](math.min(maxLength, byteBuffer.remaining()))
         byteBuffer.get(array)
         Chunk.fromArray(array)
       }
-      .refineToOrDie[BufferUnderflowException]
+      .orDie
 
   final override def put(element: Byte): IO[Exception, Unit] =
     IO.effect(byteBuffer.put(element)).unit.refineToOrDie[Exception]

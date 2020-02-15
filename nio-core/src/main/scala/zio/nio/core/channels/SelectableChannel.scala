@@ -104,8 +104,8 @@ final class SocketChannel(override protected[channels] val channel: JSocketChann
 
 object SocketChannel {
 
-  final def fromJava(javaSocketChannel: JSocketChannel): IO[IOException, SocketChannel] =
-    IO.effect(new SocketChannel(javaSocketChannel)).refineToOrDie[IOException]
+  final def fromJava(javaSocketChannel: JSocketChannel): SocketChannel =
+    new SocketChannel(javaSocketChannel)
 
   final val open: IO[IOException, SocketChannel] =
     IO.effect(new SocketChannel(JSocketChannel.open())).refineToOrDie[IOException]
@@ -147,6 +147,6 @@ object ServerSocketChannel {
   final val open: IO[IOException, ServerSocketChannel] =
     IO.effect(new ServerSocketChannel(JServerSocketChannel.open())).refineToOrDie[IOException]
 
-  def fromJava(javaChannel: JServerSocketChannel): IO[IOException, ServerSocketChannel] =
-    IO.effect(new ServerSocketChannel(javaChannel)).refineToOrDie[IOException]
+  def fromJava(javaChannel: JServerSocketChannel): ServerSocketChannel =
+    new ServerSocketChannel(javaChannel)
 }

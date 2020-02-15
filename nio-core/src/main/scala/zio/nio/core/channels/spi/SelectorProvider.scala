@@ -26,7 +26,7 @@ class SelectorProvider(private val selectorProvider: JSelectorProvider) {
     IO.effect(new Selector(selectorProvider.openSelector())).refineToOrDie[IOException]
 
   final val openServerSocketChannel: IO[IOException, ServerSocketChannel] =
-    ServerSocketChannel.fromJava(selectorProvider.openServerSocketChannel())
+    IO.effect(ServerSocketChannel.fromJava(selectorProvider.openServerSocketChannel())).refineToOrDie[IOException]
 
   final val openSocketChannel: IO[IOException, SocketChannel] =
     IO.effect(new SocketChannel(selectorProvider.openSocketChannel())).refineToOrDie[IOException]

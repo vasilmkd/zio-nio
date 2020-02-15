@@ -32,14 +32,14 @@ object SelectionKey {
   }
 }
 
-class SelectionKey(private[nio] val selectionKey: JSelectionKey) {
+final class SelectionKey(private[nio] val selectionKey: JSelectionKey) {
   import SelectionKey._
 
-  final val channel: UIO[JSelectableChannel] =
-    IO.effectTotal(selectionKey.channel())
+  final def channel: JSelectableChannel =
+    selectionKey.channel()
 
-  final val selector: UIO[Selector] =
-    IO.effectTotal(selectionKey.selector()).map(new Selector(_))
+  final def selector: Selector =
+    new Selector(selectionKey.selector())
 
   final val isValid: UIO[Boolean] =
     IO.effectTotal(selectionKey.isValid)
@@ -56,6 +56,20 @@ class SelectionKey(private[nio] val selectionKey: JSelectionKey) {
     IO.effect(selectionKey.interestOps(Operation.toInt(ops)))
       .unit
       .refineToOrDie[CancelledKeyException]
+
+  def interested(op: Operation): IO[CancelledKeyException, Set[Operation]] =
+    for {
+      current <- interestOps
+      newInterest = current + op
+      _ <- interestOps(newInterest)
+    } yield newInterest
+
+  def notInterested(op: Operation): IO[CancelledKeyException, Set[Operation]] = 
+    for {
+      current <- interestOps
+      newInterest = current - op
+      _ <- interestOps(newInterest)
+    } yield newInterest
 
   final val readyOps: IO[CancelledKeyException, Set[Operation]] =
     IO.effect(selectionKey.readyOps())
@@ -77,12 +91,9 @@ class SelectionKey(private[nio] val selectionKey: JSelectionKey) {
   final def attach(ob: Option[AnyRef]): UIO[Option[AnyRef]] =
     IO.effectTotal(Option(selectionKey.attach(ob.orNull)))
 
-  final def attach(ob: AnyRef): UIO[AnyRef] =
-    IO.effectTotal(selectionKey.attach(ob))
-
-  final val detach: UIO[Unit] =
-    IO.effectTotal(selectionKey.attach(null)).map(_ => ())
-
   final val attachment: UIO[Option[AnyRef]] =
     IO.effectTotal(selectionKey.attachment()).map(Option(_))
+
+  override def toString(): String = selectionKey.toString()
+  
 }

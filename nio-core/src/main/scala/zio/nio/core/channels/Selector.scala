@@ -7,7 +7,6 @@ import zio.{ IO, UIO }
 import com.github.ghik.silencer.silent
 import zio.duration.Duration
 import zio.nio.core.channels.spi.SelectorProvider
-import zio.{ IO, UIO }
 
 import scala.collection.JavaConverters
 
@@ -45,22 +44,34 @@ class Selector(private[nio] val selector: JSelector) {
     IO.effect(selector.selectNow()).refineToOrDie[Exception]
 
   /**
+   * Performs a blocking select operation.
+   * 
+   * **Note this will very often block**.
+   * This is intended to be used when the effect is locked to an Executor
+   * that is appropriate for this.
+   *
    * Can throw IOException and ClosedSelectorException.
    */
   final def select(timeout: Duration): IO[Exception, Int] =
     IO.effect(selector.select(timeout.toMillis)).refineToOrDie[Exception]
 
   /**
+   * Performs a blocking select operation.
+   * 
+   * **Note this will very often block**.
+   * This is intended to be used when the effect is locked to an Executor
+   * that is appropriate for this.
+   * 
    * Can throw IOException and ClosedSelectorException.
    */
-  final val select: IO[Exception, Int] =
+  final def select: IO[Exception, Int] =
     IO.effect(selector.select()).refineToOrDie[IOException]
 
   final val wakeup: IO[Nothing, Selector] =
-    IO.effectTotal(selector.wakeup()).map(new Selector(_))
+    IO.effectTotal(selector.wakeup()).unit
 
   final val close: IO[IOException, Unit] =
-    IO.effect(selector.close()).refineToOrDie[IOException].unit
+    IO.effect(selector.close()).refineToOrDie[IOException]
 }
 
 object Selector {

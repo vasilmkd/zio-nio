@@ -27,13 +27,13 @@ final class CharBuffer(charBuffer: JCharBuffer) extends Buffer[Char](charBuffer)
   override def get(i: Int): IO[IndexOutOfBoundsException, Char] =
     IO.effect(charBuffer.get(i)).refineToOrDie[IndexOutOfBoundsException]
 
-  override def getChunk(maxLength: Int = Int.MaxValue): IO[BufferUnderflowException, Chunk[Char]] =
+  override def getChunk(maxLength: Int = Int.MaxValue): IO[Nothing, Chunk[Char]] =
     IO.effect {
         val array = Array.ofDim[Char](math.min(maxLength, charBuffer.remaining()))
         charBuffer.get(array)
         Chunk.fromArray(array)
       }
-      .refineToOrDie[BufferUnderflowException]
+      .orDie
 
   def getString: IO[Nothing, String] = IO.effectTotal(charBuffer.toString())
 
